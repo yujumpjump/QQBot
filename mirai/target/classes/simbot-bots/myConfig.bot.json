@@ -1,0 +1,11 @@
+{
+  "component": "simbot.mirai",
+  "code": 2564839024,
+  "passwordInfo": {
+    "type": "text",
+    "text": "qweasd.123"
+  },
+  "config": {
+    "protocol": "MACOS"
+  }
+}

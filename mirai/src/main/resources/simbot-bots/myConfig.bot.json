@@ -1,0 +1,11 @@
+{
+  "component": "simbot.mirai",
+  "code": "you qq code",
+  "passwordInfo": {
+    "type": "text",
+    "text": "you password"
+  },
+  "config": {
+    "protocol": "MACOS"
+  }
+}
