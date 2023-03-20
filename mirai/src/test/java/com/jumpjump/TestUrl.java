@@ -65,18 +65,6 @@ public class TestUrl {
 
     }
 
-    /**
-     * 设置图片的大小
-     */
-
-    @Test
-    public void test02()throws Exception{
-        User user = groupAPIService.quireUser(ApiURLConstant.getQueryUserAll,"yu_jumpjump");
-        String suchdogs = groupAPIService.quireCheck(ApiURLConstant.checkUserBan, "yu_jumpjump");
-        InputStream img = botUtils.createImg(user, suchdogs,null);
-        BufferedImage read = ImageIO.read(img);
-        ImageIO.write(read,"jpg",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\img.jpg"));
-    }
 
 
 
@@ -150,5 +138,19 @@ public class TestUrl {
         BufferedImage read = ImageIO.read(serverImg);
         ImageIO.write(read,"jpg",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\server.jpg"));
 
+    }
+
+
+    /**
+     * 测试用户图的渲染
+     */
+    @SneakyThrows
+    @Test
+    public void test7(){
+        User yuJumpjump = groupAPIService.quireUser(ApiURLConstant.getQueryUserAll, "yu_jumpjump");
+        String yuJumpjump1 = groupAPIService.quireCheck(ApiURLConstant.checkUserBan, "yu_jumpjump");
+        InputStream userDataImg = botUtils.createUserDataImg(yuJumpjump,yuJumpjump1);
+        BufferedImage read = ImageIO.read(userDataImg);
+        ImageIO.write(read,"JPG",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\bag.jpg"));
     }
 }

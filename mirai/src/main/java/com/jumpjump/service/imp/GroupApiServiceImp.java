@@ -38,7 +38,6 @@ public class GroupApiServiceImp implements GroupAPIService {
         String string = JSONObject.parseObject(body).getString("names");
         String data = JSONObject.parseObject(string).getString(name.toLowerCase());
         JSONObject jsonObject = JSON.parseObject(data);
-//        log.info("{} 请求的数据{}",uri,data);
         int status = jsonObject.getIntValue("status");
         switch (status){
             case 1:

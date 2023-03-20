@@ -15,18 +15,15 @@ public class ApiStart implements ApplicationRunner {
 
     @Resource
    private WebHttpClient webHttpClient;
-
-
     /**
-     * 系统启动时服务器使用的api
+     * 系统启动时加载8653的服务器
      * @param args
      * @throws Exception
      */
-
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        String setsget = webHttpClient.senGet(ApiURLConstant.getServers);
-        JSONObject jsonObject = JSONObject.parseObject(setsget);
+        String serverss = webHttpClient.senGet(ApiURLConstant.getServers);
+        JSONObject jsonObject = JSONObject.parseObject(serverss);
         List<Servers> servers = JSONObject.parseArray(jsonObject.getString("servers"), Servers.class);
         ServersConstants.servers = servers;
     }

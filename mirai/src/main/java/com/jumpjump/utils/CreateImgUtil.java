@@ -1,14 +1,12 @@
 package com.jumpjump.utils;
 
 
+import cn.hutool.core.img.Img;
 import com.freewayso.image.combiner.ImageCombiner;
 import com.freewayso.image.combiner.enums.GradientDirection;
 import com.freewayso.image.combiner.enums.OutputFormat;
 import com.freewayso.image.combiner.enums.ZoomMode;
-import com.jumpjump.bean.Rotation;
-import com.jumpjump.bean.Server;
-import com.jumpjump.bean.Vehicles;
-import com.jumpjump.bean.User;
+import com.jumpjump.bean.*;
 import com.jumpjump.client.WebHttpClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +17,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -35,82 +34,6 @@ public class CreateImgUtil {
         this.webHttpClient = webHttpClient;
     }
 
-    /**
-     *查询个人数据
-     * @param user
-     */
-    public  InputStream createImg(User user, String check, List<Vehicles> aircrafts) {
-        BufferedImage avatar = null;
-        ClassPathResource resource = new ClassPathResource("img/bag.png");
-        InputStream inputStream = null;
-        BufferedImage read = null;
-        ImageCombiner imageCombiner = null;
-        InputStream combinedImageStream = null;
-        // 配置字体颜色
-        Color fontColor = new Color(253,253,253);
-        try {
-            // 头像
-            avatar = ImageIO.read(webHttpClient.setGetImg(user.getAvatar()));
-            inputStream = resource.getInputStream();
-            read = ImageIO.read(inputStream);
-            imageCombiner= new ImageCombiner(read,OutputFormat.JPG);
-            // 设置 渐变色
-            imageCombiner.addRectangleElement(500,500,1000, 1000).setAlpha(.1f);
-            //针对背景和整图的设置
-            imageCombiner.setBackgroundBlur(1);     //设置背景高斯模糊（毛玻璃效果）
-            imageCombiner.setQuality(.1f);           //设置图片保存质量（0.0~1.0，Java9以下仅jpg格式有效）
-
-            // 设置用户头像
-            imageCombiner.addImageElement(avatar,100,162,200,200,ZoomMode.WidthHeight).setRoundCorner(500).setX(50);
-            // 设置用户姓名
-            imageCombiner.addTextElement(user.getUserName(),130,320,120).setColor(new Color(215, 246, 250, 250)).setX(270);
-            // 设置用户等级
-            imageCombiner.addTextElement("等级 "+user.getRank(),60,320,270).setColor(Color.WHITE).setX(280);
-            // 设置用户游戏时长
-            imageCombiner.addTextElement("游玩时长 "+user.getSecondsPlayed()/3600,60,630,270).setColor(fontColor).setX(590);
-
-
-            // 设置生涯
-            imageCombiner.addTextElement(
-                           "K/D: "+user.getInfantryKillDeath()+" " +
-                                "KPM: "+user.getKillsPerMinute()+" " +
-                                "SPM: "+user.getScorePerMinute(),
-                            "微软雅黑", 55, 80, 400).setColor(fontColor);
-            imageCombiner.addTextElement(
-                       "命中率: "+user.getAccuracy()+"  " +
-                            "爆头率: "+user.getHeadshots()+"  " +
-                            "爆头数: "+user.getDeaths(),
-                    "微软雅黑", 55, 80, 490).setColor(fontColor);
-
-            imageCombiner.addTextElement(
-                       "击杀: "+user.getKills()+"  " +
-                            "死亡: "+user.getDeaths()+"  " +
-                            "救援: "+user.getRevives(),
-                    "微软雅黑", 55, 80, 580).setColor(fontColor);
-
-            imageCombiner.addTextElement(
-                       "胜率: "+user.getWinPercent()+"  " +
-                            "胜场: "+user.getWins()+"  " +
-                            "败场: "+user.getLoses(),
-                    "微软雅黑", 55, 80, 670).setColor(fontColor);
-
-            imageCombiner.addTextElement(
-                       "救援: "+user.getRevives()+"  " +
-                            "最远爆头 : "+user.getLongestHeadShot()+"  " +
-                            "最高连杀: "+user.getHighestKillStreak(),
-                    "微软雅黑", 55, 80, 760).setColor(fontColor);
-
-
-            imageCombiner.addTextElement("*联ban状态:"+check,"微软雅黑", 45, imageCombiner.getCanvasWidth()-500, 100).setColor(Color.RED);
-            imageCombiner.combine();
-            combinedImageStream= imageCombiner.getCombinedImageStream();
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.info("图片渲染错误.... 可能问题存在类BotUtils中");
-        }
-        return combinedImageStream;
-
-    }
 
 
     /**
@@ -146,11 +69,10 @@ public class CreateImgUtil {
                 imgY+=120;
                 wzX=80;
                 wzY+=120;
-                continue;
             }
             imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(rotation.getImage())),imgX,imgY,110,70,ZoomMode.WidthHeight).setRoundCorner(10);
-            imageCombiner.addTextElement(rotation.getMapname(),"宋体",14,wzX,wzY).setColor(255, 255, 255);
-            imageCombiner.addTextElement(rotation.getMode(),"宋体",14,wzX,wzY+15).setColor(255, 255, 255);
+            imageCombiner.addTextElement(rotation.getMapname(),"宋体",16,wzX,wzY).setColor(255, 255, 255);
+            imageCombiner.addTextElement(rotation.getMode(),"宋体",16,wzX,wzY+15).setColor(255, 255, 255);
             imageCombiner.combine();
             imgX+=130;
             wzX+=130;
@@ -158,9 +80,97 @@ public class CreateImgUtil {
         }
         imageCombiner.addTextElement("服主信息","宋体",25,780,20).setColor(255, 255, 255);
         imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(server.getOwner().getAvatar())),870,50,80,80,ZoomMode.WidthHeight);
-        imageCombiner.addTextElement(server.getOwner().getName(),"宋体",18,850,120).setColor(255, 255, 255);
+        imageCombiner.addTextElement(server.getOwner().getName(),"宋体",18,850,130).setColor(255, 255, 255);
         imageCombiner.combine();
         return imageCombiner.getCombinedImageStream();
+    }
+
+
+    /**
+     * 查询用户信息，并返回图片
+     * @return
+     */
+
+    @SneakyThrows
+    public InputStream createUserDataImg(User user,String banCheck){
+        ImageCombiner imageCombiner = new ImageCombiner(1500,850,new Color(14, 15, 20),OutputFormat.JPG);
+        imageCombiner.addTextElement("个人生涯","宋体",32,50,270).setColor(255,255,255);
+        InputStream inputStream = new ClassPathResource("img/bfv.png").getInputStream();
+        imageCombiner.addRectangleElement(50,300,580,250).setColor(22, 24, 31).setRoundCorner(20);
+        imageCombiner.setQuality(.1f);
+        imageCombiner.addImageElement(ImageIO.read(inputStream),1250,5,200,100,ZoomMode.WidthHeight);
+        imageCombiner.addTextElement("联办查询:"+banCheck,30,50,680).setColor(255, 255, 255);
+        imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(user.getAvatar())),50,105,100,100,ZoomMode.WidthHeight).setRoundCorner(100);
+        imageCombiner.addTextElement(user.getUserName(),30,160,110).setColor(255, 255, 255);
+        imageCombiner.addTextElement("等级:"+user.getRank(),24,160,145).setColor(255, 255, 255);
+        imageCombiner.addTextElement("游玩时间:"+(user.getSecondsPlayed()/3600),24,160,170).setColor(255, 255, 255);
+        //写个人生涯
+        imageCombiner.addTextElement(
+                "K/D: "+user.getInfantryKillDeath()+" " +
+                        "KPM: "+user.getKillsPerMinute()+" " +
+                        "SPM: "+user.getScorePerMinute(),
+                "宋体", 24, 120, 310).setColor(255, 255, 255);
+
+        imageCombiner.addTextElement(
+                "命中率: "+user.getAccuracy()+"  " +
+                        "爆头率: "+user.getHeadshots()+"  " +
+                        "爆头数: "+user.getDeaths(),
+                "微软雅黑", 20, 120, 360).setColor(255, 255, 255);
+        imageCombiner.addTextElement(
+                "击杀: "+user.getKills()+"  " +
+                        "死亡: "+user.getDeaths()+"  " +
+                        "救援: "+user.getRevives(),
+                "微软雅黑", 20, 120, 410).setColor(255, 255, 255);
+        imageCombiner.addTextElement(
+                "胜率: "+user.getWinPercent()+"  " +
+                        "胜场: "+user.getWins()+"  " +
+                        "败场: "+user.getLoses(),
+                "微软雅黑", 20, 120, 460).setColor(255, 255, 255);
+
+        imageCombiner.addTextElement(
+                "救援: "+user.getRevives()+"  " +
+                        "最远爆头 : "+user.getLongestHeadShot()+"  " +
+                        "最高连杀: "+user.getHighestKillStreak(),
+                "微软雅黑", 20, 120, 510).setColor(255, 255, 255);
+
+
+        //武器渲染
+        imageCombiner.addRectangleElement(750,150,700,300).setColor(22, 24, 31).setRoundCorner(20);
+        imageCombiner.addTextElement("武器/载具(以击杀数前5显示)","宋体",28,750,120).setColor(255,255,255);
+        imageCombiner.addTextElement("枪械名称                      KPM     KILLS      准度      爆头率",24,800,170).setColor(255,255,255);
+        List<Weapon> weapons = user.getWeapons();
+        weapons.sort(Comparator.comparing(Weapon::getKills).reversed());
+        List<Weapon> weapons5 = weapons.subList(0, 5);
+        int wzY = 210;
+        for(Weapon weapon:weapons5){
+//            imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(weapon.getImage())),760,imgY,120,50,ZoomMode.WidthHeight);
+            imageCombiner.addTextElement(weapon.getWeaponName(),24,800,wzY).setColor(255,255,255);
+            imageCombiner.addTextElement(weapon.getKillsPerMinute()+"",20,1050,wzY).setColor(255,255,255);
+            imageCombiner.addTextElement(weapon.getKills()+"",24,1140,wzY).setColor(255,255,255);
+            imageCombiner.addTextElement(weapon.getAccuracy()+"",24,1240,wzY).setColor(255,255,255);
+            imageCombiner.addTextElement(weapon.getHeadshots()+"",24,1330,wzY).setColor(255,255,255);
+            wzY+=50;
+        }
+
+        // 载具渲染
+        imageCombiner.addRectangleElement(750,480,700,300).setColor(22, 24, 31).setRoundCorner(20);
+        imageCombiner.addTextElement("载具名称                      KPM     KILLS      摧毁      种类",24,800,500).setColor(255,255,255);
+        List<Vehicles> vehicles = user.getVehicles();
+        vehicles.sort(Comparator.comparing(Vehicles::getKills).reversed());
+        List<Vehicles> vehicles5 = vehicles.subList(0, 5);
+        int Y = 540;
+        for(Vehicles vehicle:vehicles5){
+            imageCombiner.addTextElement(vehicle.getVehicleName(),24,800,Y).setColor(255,255,255);
+            imageCombiner.addTextElement(vehicle.getKillsPerMinute()+"",24,1050,Y).setColor(255,255,255);
+            imageCombiner.addTextElement(vehicle.getKills()+"",24,1140,Y).setColor(255,255,255);
+            imageCombiner.addTextElement(vehicle.getDestroyed()+"",24,1240,Y).setColor(255,255,255);
+            imageCombiner.addTextElement(vehicle.getType()+"",24,1330,Y).setColor(255,255,255);
+            Y+=50;
+        }
+        imageCombiner.addTextElement("爱来自:8653全体管理！",20,1280,820).setColor(255, 255, 255);
+        imageCombiner.combine();
+        InputStream combinedImageStream = imageCombiner.getCombinedImageStream();
+        return combinedImageStream;
     }
 
 
