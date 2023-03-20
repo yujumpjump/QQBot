@@ -10,6 +10,7 @@ import com.jumpjump.constants.ApiURLConstant;
 import com.jumpjump.service.GroupAPIService;
 import com.jumpjump.utils.CreateImgUtil;
 import gui.ava.html.image.generator.HtmlImageGenerator;
+import lombok.SneakyThrows;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,10 +73,9 @@ public class TestUrl {
     public void test02()throws Exception{
         User user = groupAPIService.quireUser(ApiURLConstant.getQueryUserAll,"yu_jumpjump");
         String suchdogs = groupAPIService.quireCheck(ApiURLConstant.checkUserBan, "yu_jumpjump");
-//        List<Aircraft> yuJumpjump = groupAPIService.quireAircraft(ApiURLConstant.getQueryUserAll, "yu_jumpjump");
         InputStream img = botUtils.createImg(user, suchdogs,null);
         BufferedImage read = ImageIO.read(img);
-        ImageIO.write(read,"jpg",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\img.png"));
+        ImageIO.write(read,"jpg",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\img.jpg"));
     }
 
 
@@ -126,7 +126,7 @@ public class TestUrl {
     @Test
     public  void test4(){
 //        Server server = groupAPIService.quireWeapon(ApiURLConstant.getServer,"S10");
-        Server server = groupAPIService.quireServer(ApiURLConstant.getServer, "s1");
+        Server server = groupAPIService.quireServer(ApiURLConstant.getServer, "s10");
         System.out.println(server);
     }
 
@@ -134,5 +134,21 @@ public class TestUrl {
     @Test
     public void test5(){
         groupAPIService.quireUser(ApiURLConstant.getQueryUserAll,"yu_jumpjump");
+    }
+
+
+    /**
+     * 测试服务器变成图片
+     */
+    @SneakyThrows
+    @Test
+    public void test6(){
+        Server server = groupAPIService.quireServer(ApiURLConstant.getServer, "s4" +
+                "");
+        InputStream serverImg = botUtils.createServerImg(server);
+        System.out.println(server);
+        BufferedImage read = ImageIO.read(serverImg);
+        ImageIO.write(read,"jpg",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\server.jpg"));
+
     }
 }

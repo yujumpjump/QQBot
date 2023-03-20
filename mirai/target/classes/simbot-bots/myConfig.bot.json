@@ -1,9 +1,9 @@
 {
   "component": "simbot.mirai",
-  "code": 2564839024,
+  "code": "you qq code",
   "passwordInfo": {
     "type": "text",
-    "text": "qweasd.123"
+    "text": "you password"
   },
   "config": {
     "protocol": "MACOS"

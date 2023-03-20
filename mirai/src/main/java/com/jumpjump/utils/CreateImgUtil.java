@@ -2,11 +2,15 @@ package com.jumpjump.utils;
 
 
 import com.freewayso.image.combiner.ImageCombiner;
+import com.freewayso.image.combiner.enums.GradientDirection;
 import com.freewayso.image.combiner.enums.OutputFormat;
 import com.freewayso.image.combiner.enums.ZoomMode;
+import com.jumpjump.bean.Rotation;
+import com.jumpjump.bean.Server;
 import com.jumpjump.bean.Vehicles;
 import com.jumpjump.bean.User;
 import com.jumpjump.client.WebHttpClient;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -49,18 +53,11 @@ public class CreateImgUtil {
             avatar = ImageIO.read(webHttpClient.setGetImg(user.getAvatar()));
             inputStream = resource.getInputStream();
             read = ImageIO.read(inputStream);
-//            imageCombiner= new ImageCombiner(read, OutputFormat.JPG);
-            imageCombiner= new ImageCombiner(1800,1000,new Color(21, 23, 33), OutputFormat.JPG);
+            imageCombiner= new ImageCombiner(read,OutputFormat.JPG);
             // 设置 渐变色
-//            imageCombiner.addRectangleElement(0,0, imageCombiner.getCanvasWidth(), imageCombiner.getCanvasHeight()).setGradient(
-//                    new Color(28, 45, 44, 208),
-//                    new Color(52, 21, 38),
-//                    0,
-//                    imageCombiner.getCanvasHeight(),
-//                    GradientDirection.TopBottom
-//            ).setAlpha(.4f);
+            imageCombiner.addRectangleElement(500,500,1000, 1000).setAlpha(.1f);
             //针对背景和整图的设置
-//            imageCombiner.setBackgroundBlur(1);     //设置背景高斯模糊（毛玻璃效果）
+            imageCombiner.setBackgroundBlur(1);     //设置背景高斯模糊（毛玻璃效果）
             imageCombiner.setQuality(.1f);           //设置图片保存质量（0.0~1.0，Java9以下仅jpg格式有效）
 
             // 设置用户头像
@@ -119,9 +116,51 @@ public class CreateImgUtil {
     /**
      * 查询服务器 并且返回图片
      */
-    public InputStream createServerImg(String serverUlr){
-      return null;
+    @SneakyThrows
+    public InputStream createServerImg(Server server){
 
+        ImageCombiner imageCombiner;
+        BufferedImage currentMapImage;
+        int imgX=50;
+        int imgY=280;
+        int wzX=80;
+        int wzY=350;
+        imageCombiner = new ImageCombiner(1000, 670, new Color(14, 15, 20), OutputFormat.JPG);
+        currentMapImage = ImageIO.read(webHttpClient.setGetImg(server.getCurrentMapImage()));
+        imageCombiner.addImageElement(currentMapImage,50,70,170,100,ZoomMode.WidthHeight).setRoundCorner(20);
+        imageCombiner.addTextElement(server.getPrefix(),"宋体",21,230,75).setColor(255, 255, 255);
+        imageCombiner.addTextElement(
+                server.getPlayerAmount()+"/"+server.getMaxPlayerAmount()+"-"+server.getCurrentMap(),
+                "宋体",18,230,110).setColor(255, 255, 255);
+        imageCombiner.addTextElement(
+                server.getRegion()+"/"+server.getCountry()+"-"+server.getMode(),
+                "宋体",18,230,140).setColor(255, 255, 255);
+
+        imageCombiner.addTextElement(
+                "服务器地图循环",
+                "宋体",24,50,250).setColor(255, 255, 255);
+
+        for(Rotation rotation:server.getRotation()){
+            if(imgX>950){
+                imgX=50;
+                imgY+=120;
+                wzX=80;
+                wzY+=120;
+                continue;
+            }
+            imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(rotation.getImage())),imgX,imgY,110,70,ZoomMode.WidthHeight).setRoundCorner(10);
+            imageCombiner.addTextElement(rotation.getMapname(),"宋体",14,wzX,wzY).setColor(255, 255, 255);
+            imageCombiner.addTextElement(rotation.getMode(),"宋体",14,wzX,wzY+15).setColor(255, 255, 255);
+            imageCombiner.combine();
+            imgX+=130;
+            wzX+=130;
+
+        }
+        imageCombiner.addTextElement("服主信息","宋体",25,780,20).setColor(255, 255, 255);
+        imageCombiner.addImageElement(ImageIO.read(webHttpClient.setGetImg(server.getOwner().getAvatar())),870,50,80,80,ZoomMode.WidthHeight);
+        imageCombiner.addTextElement(server.getOwner().getName(),"宋体",18,850,120).setColor(255, 255, 255);
+        imageCombiner.combine();
+        return imageCombiner.getCombinedImageStream();
     }
 
 
