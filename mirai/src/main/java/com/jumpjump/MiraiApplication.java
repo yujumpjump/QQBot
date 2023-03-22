@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 //@EnableSimbot
-@MapperScan(value = "com.jumpjump.mapper")
+@MapperScan(value = "com.jumpjump.bullhorsebot.mapper")
 public class MiraiApplication {
 
     public static void main(String[] args) {

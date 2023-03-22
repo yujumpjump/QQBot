@@ -3,12 +3,12 @@ package com.jumpjump;
 
 import com.freewayso.image.combiner.ImageCombiner;
 import com.freewayso.image.combiner.enums.OutputFormat;
-import com.jumpjump.bean.Server;
-import com.jumpjump.bean.User;
-import com.jumpjump.client.WebHttpClient;
-import com.jumpjump.constants.ApiURLConstant;
-import com.jumpjump.service.GroupAPIService;
-import com.jumpjump.utils.CreateImgUtil;
+import com.jumpjump.bullhorsebot.bean.Server;
+import com.jumpjump.bullhorsebot.bean.User;
+import com.jumpjump.bullhorsebot.client.WebHttpClient;
+import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
+import com.jumpjump.bullhorsebot.service.GroupAPIService;
+import com.jumpjump.bullhorsebot.utils.CreateImgUtil;
 import gui.ava.html.image.generator.HtmlImageGenerator;
 import lombok.SneakyThrows;
 import org.junit.Test;
