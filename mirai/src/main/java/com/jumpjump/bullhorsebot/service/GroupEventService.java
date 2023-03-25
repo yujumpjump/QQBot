@@ -1,6 +1,7 @@
 package com.jumpjump.bullhorsebot.service;
 
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent;
+import love.forte.simbot.component.mirai.event.MiraiGroupMessageRecallEvent;
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent;
 import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent;
 import love.forte.simbot.event.ContinuousSessionContext;
@@ -31,5 +32,10 @@ public interface GroupEventService {
     public void laveGroup(MiraiMemberLeaveEvent miraiMemberLeaveEvent);
 
 
-    void persistentSessions(MiraiGroupMessageEvent miraiGroupMessageEvent, ContinuousSessionContext sessionContext);
+    /**
+     * 处理 消息撤回
+     */
+
+    public void groupMessageRecallEvent(MiraiGroupMessageRecallEvent miraiGroupMessageRecallEvent);
+
 }

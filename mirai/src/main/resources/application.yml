@@ -1,12 +1,13 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/hmd?useSSL=false&autoReconnect=true&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/8653?useSSL=false&autoReconnect=true&characterEncoding=utf8
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 8520
 mybatis-plus:
     configuration:
       map-underscore-to-camel-case: false        #关闭驼峰命名映射
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 
 

@@ -7,7 +7,7 @@ import com.jumpjump.bullhorsebot.bean.Servers;
 import com.jumpjump.bullhorsebot.bean.User;
 import com.jumpjump.bullhorsebot.client.WebHttpClient;
 import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
-import com.jumpjump.bullhorsebot.constants.ServersConstants;
+import com.jumpjump.bullhorsebot.constants.StaticConstants;
 import com.jumpjump.bullhorsebot.service.GroupAPIService;
 import com.jumpjump.bullhorsebot.utils.CheckServer;
 import jakarta.annotation.Resource;
@@ -81,7 +81,7 @@ public class GroupApiServiceImp implements GroupAPIService {
     @Override
     public Server quireServer(String url, String serverName) {
         Server server;
-        for(Servers server1: ServersConstants.servers){
+        for(Servers server1: StaticConstants.servers){
             if(server1.getPrefix().contains(serverName.toUpperCase())){
                 String uri = subName(url, server1.getPrefix());
                 String data = httpClient.senGet(uri);
@@ -93,7 +93,7 @@ public class GroupApiServiceImp implements GroupAPIService {
                     String servers = httpClient.senGet(ApiURLConstant.getServers);
                     JSONObject jsonObject = JSONObject.parseObject(servers);
                     List<Servers> date = JSONObject.parseArray(jsonObject.getString("servers"), Servers.class);
-                    ServersConstants.servers = CheckServer.checkServer(date);
+                    StaticConstants.servers = CheckServer.checkServer(date);
                     return null;
                 }
             }

@@ -33,7 +33,7 @@ public class WebHttpClient {
              inputStream = resource.getInputStream();
         } catch (IOException e) {
             log.info("获取网络图片资源失败,可能存在代理出现问题！");
-            e.printStackTrace();
+            return  null;
         }
         return inputStream;
     }
@@ -45,13 +45,19 @@ public class WebHttpClient {
      * @return
      */
 
-    public String senGet(String serverUrl){
-        log.info("请求的url,{}",serverUrl);
-        ResponseEntity<String> forEntity = restTemplate.getForEntity(serverUrl, String.class);
-        if(forEntity.getStatusCode().is2xxSuccessful()){
-            return forEntity.getBody();
-        }else{
+    public String senGet(String serverUrl) {
+        log.info("请求的url,{}", serverUrl);
+        ResponseEntity<String> forEntity;
+        String body = null;
+        try {
+            forEntity= restTemplate.getForEntity(serverUrl, String.class);
+            if (forEntity.getStatusCode().is2xxSuccessful()) {
+                body =  forEntity.getBody();
+            }
+        } catch (Exception e) {
+            log.info("获取为了数据有问题！");
             return null;
         }
+        return body;
     }
 }

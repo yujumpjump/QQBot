@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Random;
 
 
 @SpringBootTest
@@ -152,5 +153,12 @@ public class TestUrl {
         InputStream userDataImg = botUtils.createUserDataImg(yuJumpjump,yuJumpjump1);
         BufferedImage read = ImageIO.read(userDataImg);
         ImageIO.write(read,"JPG",new File("C:\\Users\\admin\\Desktop\\miraicore\\mirai\\src\\test\\resources\\img\\bag.jpg"));
+    }
+
+    @Test
+    public void test08(){
+        Random rand = new Random();
+        int randomNumber = rand.nextInt(10) + 1;
+        System.out.println(randomNumber);
     }
 }

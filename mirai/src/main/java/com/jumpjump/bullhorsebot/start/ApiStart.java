@@ -1,8 +1,10 @@
-package com.jumpjump.bullhorsebot.constants;
+package com.jumpjump.bullhorsebot.start;
 
 import com.alibaba.fastjson.JSONObject;
 import com.jumpjump.bullhorsebot.bean.Servers;
 import com.jumpjump.bullhorsebot.client.WebHttpClient;
+import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
+import com.jumpjump.bullhorsebot.constants.StaticConstants;
 import com.jumpjump.bullhorsebot.utils.CheckServer;
 import jakarta.annotation.Resource;
 import org.springframework.boot.ApplicationArguments;
@@ -27,6 +29,6 @@ public class ApiStart implements ApplicationRunner {
         JSONObject jsonObject = JSONObject.parseObject(serverss);
         List<Servers> servers = JSONObject.parseArray(jsonObject.getString("servers"), Servers.class);
         // 加载服务器之前 进行真服务器的验证
-        ServersConstants.servers = CheckServer.checkServer(servers);
+        StaticConstants.servers = CheckServer.checkServer(servers);
     }
 }

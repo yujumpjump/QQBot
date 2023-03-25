@@ -39,14 +39,23 @@ public class CreateImgUtil {
      */
     @SneakyThrows
     public InputStream createServerImg(Server server){
-
+        int imgHeight=0;
+        if(server.getRotation().size()>14){
+            imgHeight  =670;
+        }
+        if(server.getRotation().size()>7&&server.getRotation().size()<=14){
+            imgHeight = 570;
+        }
+        if(server.getRotation().size()<=7){
+            imgHeight = 470;
+        }
         ImageCombiner imageCombiner;
         BufferedImage currentMapImage;
         int imgX=50;
         int imgY=280;
         int wzX=80;
         int wzY=350;
-        imageCombiner = new ImageCombiner(1000, 670, new Color(14, 15, 20), OutputFormat.JPG);
+        imageCombiner = new ImageCombiner(1000, imgHeight, new Color(14, 15, 20), OutputFormat.JPG);
         currentMapImage = ImageIO.read(webHttpClient.setGetImg(server.getCurrentMapImage()));
         imageCombiner.addImageElement(currentMapImage,50,70,170,100,ZoomMode.WidthHeight).setRoundCorner(20);
         imageCombiner.addTextElement(server.getPrefix(),"宋体",21,230,75).setColor(255, 255, 255);
@@ -90,7 +99,7 @@ public class CreateImgUtil {
      */
 
     @SneakyThrows
-    public InputStream createUserDataImg(User user, String banCheck){
+    public InputStream createUserDataImg( User user, String banCheck){
         ImageCombiner imageCombiner = new ImageCombiner(1500,850,new Color(14, 15, 20),OutputFormat.JPG);
         imageCombiner.addTextElement("个人生涯","宋体",32,50,270).setColor(255,255,255);
         InputStream inputStream = new ClassPathResource("img/bfv.png").getInputStream();
@@ -170,6 +179,9 @@ public class CreateImgUtil {
         InputStream combinedImageStream = imageCombiner.getCombinedImageStream();
         return combinedImageStream;
     }
+
+
+
 
 
 }

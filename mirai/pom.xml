@@ -17,18 +17,64 @@
         <java.version>17</java.version>
     </properties>
 
+
+    <repositories>
+        <repository>
+            <id>miraisnapshots</id>
+            <name>mirai snapshots</name>
+            <url>https://repo.mirai.mamoe.net/snapshots</url>
+        </repository>
+    </repositories>
+
     <!--simbot3框架-->
     <dependencies>
         <dependency>
             <groupId>love.forte.simbot.boot</groupId>
             <artifactId>simboot-core-spring-boot-starter</artifactId>
             <version>3.0.0-RC.3</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>annotations</artifactId>
+                    <groupId>org.jetbrains</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>kotlinx-serialization-core-jvm</artifactId>
+                    <groupId>org.jetbrains.kotlinx</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>kotlinx-serialization-json-jvm</artifactId>
+                    <groupId>org.jetbrains.kotlinx</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>love.forte.simbot.component</groupId>
             <artifactId>simbot-component-mirai-core</artifactId>
             <version>3.0.0.0-M5</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>kotlinx-serialization-core-jvm</artifactId>
+                    <groupId>org.jetbrains.kotlinx</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>mirai-core-jvm</artifactId>
+                    <groupId>net.mamoe</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
+
+            <dependency>
+                <groupId>net.mamoe</groupId>
+                <artifactId>mirai-core-jvm</artifactId>
+                <version>2.15.0-dev-36</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>kotlinx-serialization-json-jvm</artifactId>
+                        <groupId>org.jetbrains.kotlinx</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
 
         <!--Springboot框架依赖-->

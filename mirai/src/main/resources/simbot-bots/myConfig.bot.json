@@ -1,11 +1,14 @@
 {
   "component": "simbot.mirai",
-  "code": "you qq code",
+  "code": "2315200674",
   "passwordInfo": {
     "type": "text",
-    "text": "you password"
+    "text": "wcylovegem1314"
   },
   "config": {
-    "protocol": "MACOS"
+    "protocol": "ANDROID_PHONE",
+    "recallMessageCacheStrategyConfig": {
+      "type": "memory_lru"
+    }
   }
 }

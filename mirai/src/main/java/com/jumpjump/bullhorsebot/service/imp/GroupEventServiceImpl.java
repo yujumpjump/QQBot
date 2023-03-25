@@ -1,41 +1,41 @@
 package com.jumpjump.bullhorsebot.service.imp;
 
-import com.jumpjump.bullhorsebot.bean.Hmd;
+import com.jumpjump.bullhorsebot.bean.Server;
 import com.jumpjump.bullhorsebot.bean.User;
-import com.jumpjump.bullhorsebot.bean.Vehicles;
 import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
-import com.jumpjump.bullhorsebot.mapper.HmdDataMapper;
+import com.jumpjump.bullhorsebot.constants.StaticConstants;
+import com.jumpjump.bullhorsebot.mapper.BmdMapper;
+import com.jumpjump.bullhorsebot.mode.vo.Bmd;
 import com.jumpjump.bullhorsebot.service.GroupAPIService;
 import com.jumpjump.bullhorsebot.service.GroupEventService;
 import com.jumpjump.bullhorsebot.utils.CreateImgUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import love.forte.simbot.ID;
 import love.forte.simbot.LongID;
 import love.forte.simbot.component.mirai.MiraiGroup;
 import love.forte.simbot.component.mirai.MiraiMember;
 import love.forte.simbot.component.mirai.announcement.MiraiAnnouncements;
+import love.forte.simbot.component.mirai.bot.MiraiBot;
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent;
+import love.forte.simbot.component.mirai.event.MiraiGroupMessageRecallEvent;
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent;
 import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent;
-import love.forte.simbot.event.ContinuousSessionContext;
 import love.forte.simbot.message.*;
 import love.forte.simbot.resources.Resource;
 import love.forte.simbot.resources.StandardResource;
-import love.forte.simbot.resources.URLResource;
 import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.announcement.Announcements;
 import net.mamoe.mirai.contact.announcement.OnlineAnnouncement;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -43,266 +43,286 @@ import java.util.concurrent.TimeUnit;
 public class GroupEventServiceImpl implements GroupEventService {
 
     // 加群保存用户的key
-     private static final Map<String,LongID>  joinKye = new HashMap<>();
+    private static final Map<Long, Long> joinUserKey = new HashMap<>();
 
-     private final GroupAPIService groupAPIService;
+    private final GroupAPIService groupAPIService;
 
+    private final CreateImgUtil createImgUtil;
 
-     private final CreateImgUtil botUtils;
+    private final BmdMapper bmdMapper;
 
-
-    private final HmdDataMapper hmdDataMapper;
-
-    public GroupEventServiceImpl(GroupAPIService groupAPIService, CreateImgUtil botUtils, HmdDataMapper hmdDataMapper) {
+    public GroupEventServiceImpl(GroupAPIService groupAPIService, CreateImgUtil createImgUtil, BmdMapper bmdMapper) {
         this.groupAPIService = groupAPIService;
-        this.botUtils = botUtils;
-        this.hmdDataMapper = hmdDataMapper;
+        this.createImgUtil = createImgUtil;
+        this.bmdMapper = bmdMapper;
     }
 
     /**
-     *处理群里面关键字并且回复
+     * 处理群里面关键字并且回复
      */
     @Override
     public void messageGroup(MiraiGroupMessageEvent miraiGroupMessageEvent) {
+        // 信息发送的群
+        MiraiGroup group = miraiGroupMessageEvent.getGroup();
+        // 信息发送的人
+        MiraiMember groupUser = miraiGroupMessageEvent.getAuthor();
+        // 信息内容
         String message = miraiGroupMessageEvent.getMessageContent().getPlainText();
-        MiraiMember member = miraiGroupMessageEvent.getAuthor();
-        At at = new At(member.getId());
-        if(message.contains("被踢")){
-            Messages messages = Messages.toMessages(Text.of("pb="+member.getNickname()));
-            miraiGroupMessageEvent.sendAsync(messages);
-        }else if(message.contains("注册")){
-            URLResource resource;
-            try {
-                resource = Resource.of(new ClassPathResource("/img/reg.jpg").getURL());
-                ResourceImage resourceImage = Image.of(resource);
-                Messages messages = Messages.toMessages(at, Text.of(" 注册如下图\n")).plus(resourceImage);
-                miraiGroupMessageEvent.sendBlocking(messages);
-            } catch (IOException e) {
-                log.error("图片读取错误....");
-                throw new RuntimeException(e);
-            }
-        }else if(message.contains("查询")){
-            String name;
-            String check;
-            User user;
-            List<Vehicles> aircraft=null;
-            try {
-                 name = message.substring(2);
-                 user = groupAPIService.quireUser(ApiURLConstant.getQueryUserAll,name);
-                 check = groupAPIService.quireCheck(ApiURLConstant.checkUserBan,name);
-            }catch (Exception e){
-                log.info("数据请求超时");
-                e.printStackTrace();
-                Messages messages = Messages.toMessages(at, Text.of(" 网络超时，请稍后在查询!"));
-                miraiGroupMessageEvent.sendBlocking(messages);
+        // @用户 并且创建消息链
+        At atUser = new At(groupUser.getId());
+        Messages toMessages = Messages.toMessages(atUser);
+
+        // 处理群主任的设置
+        if(message.contains("add admin=") || message.contains("remover admin=")){
+            ownerMessage(miraiGroupMessageEvent);
+            return;
+        }
+
+        // 处理管理员的操作
+        if(message.equals(".") || message.equals("..") || message.equals("。。")){
+            adminMessage(miraiGroupMessageEvent);
+            return;
+        }
+
+        /*---------------------------判断普通用户的需求,排除白名单 管理员-------------------------*/
+        if(StaticConstants.admin.get(groupUser.getId().toString())==null){
+            if (message.contains("被踢")) {
+                group.sendAsync(Messages.toMessages(Text.of("pb=" + groupUser.getNickname())));
                 return;
             }
-            if(user==null || check==null || user.getUserName()==null){
-                Messages messages = Messages.toMessages(at, Text.of(" 请输入正确id!"));
-                miraiGroupMessageEvent.sendBlocking(messages);
+            if (message.contains("注册")) {
+                ClassPathResource classPathResourceRegImg = new ClassPathResource("img/reg.jpg");
+                try {
+                    StandardResource ofImg = Resource.of(classPathResourceRegImg.getInputStream());
+                    ResourceImage resourceImage = Image.of(ofImg);
+                    group.sendAsync(toMessages.plus(Messages.toMessages(Text.of("注册如下图\n"))).plus(Messages.toMessages(resourceImage)));
+                    return;
+                } catch (IOException e) {
+                    log.info("注册图片读取失败!");
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        if (message.contains("!cx") || message.contains("!fwq")) {
+            String[] subMessage = message.split(" ");
+            String keyMessage = subMessage[0];
+            String name = subMessage[1];
+            String checkBan;
+            User userData;
+            InputStream dataImg;
+            StandardResource ofImg;
+            ResourceImage userDataOf;
+            Server server;
+            if (keyMessage.equals("!cx")) {
+                try {
+                    checkBan = groupAPIService.quireCheck(ApiURLConstant.checkUserBan, name);
+                    userData = groupAPIService.quireUser(ApiURLConstant.getQueryUserAll, name);
+                    if (checkBan == null || userData == null) {
+                        group.sendAsync(toMessages.plus(Messages.toMessages(Text.of("请输入正确的游戏id"))));
+                        return;
+                    }
+                    dataImg = createImgUtil.createUserDataImg(userData, checkBan);
+                    ofImg = Resource.of(dataImg);
+                    userDataOf = Image.of(ofImg);
+                    group.sendAsync(toMessages.plus(Text.of("\n")).plus(Messages.toMessages(userDataOf)));
+                } catch (IOException e) {
+                    log.info("本地图片读取错误!");
+                    throw new RuntimeException(e);
+                }
                 return;
             }
-            try {
-                /**
-                 * 创建图片并且发生 ,部署
-                 */
-                InputStream img = botUtils.createUserDataImg(user, check);
-                StandardResource cx = Resource.of(img);
-                ResourceImage of = Image.of(cx);
-                Messages messages = Messages.toMessages(at, Text.of("\n")).plus(of);
-                miraiGroupMessageEvent.sendBlocking(messages);
-                /**
-                 * 测试
-                 */
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (keyMessage.equals("!fwq")) {
+                try {
+                    server = groupAPIService.quireServer(ApiURLConstant.getServer, name);
+                    if (server == null) {
+                        group.sendAsync(toMessages.plus(Messages.toMessages(Text.of("8653服务器正在运行的数量为" + StaticConstants.servers.size()))));
+                        return;
+                    }
+                    dataImg = createImgUtil.createServerImg(server);
+                    ofImg = Resource.of(dataImg);
+                    userDataOf = Image.of(ofImg);
+                    group.sendAsync(toMessages.plus(Text.of("\n")).plus(Messages.toMessages(userDataOf)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }else if(message.contains("!hmd=")){
-            String substring = message.split("=")[1];
-            Hmd hmd = hmdDataMapper.selectById(substring);
-            Messages messages;
-            if(hmd==null){
-                messages = Messages.toMessages(at, Text.of("本地黑名单没有此用户"));
-            }else {
-                messages = Messages.toMessages(at, Text.of(" 以下被本地用服务器拉黑的用户信息，如果是本人请联系管理员处理！\n"+
-                        "id: " + hmd.getId() + "\n被ban服务器: " + hmd.getServer()+"\n原因: "+hmd.getYuanYin()+
-                                "\n被举报时间: "+ hmd.getData()+"\n处事件的管理员id: "+hmd.getAdmin()+"\n录入时间: "+hmd.getLoggindate()+"\n证据如下:\n"+hmd.getUrl()
-                ));
-            }
-            miraiGroupMessageEvent.sendBlocking(messages);
         }
     }
 
-
     /**
      * 解决新人进群公告解除禁言
+     *
      * @param miraiBotJoinGroupEvent
      */
+    @SneakyThrows
     @Override
     public void joinGroup(MiraiMemberJoinEvent miraiBotJoinGroupEvent) {
+        // 获取进入群成员
         MiraiMember member = miraiBotJoinGroupEvent.getMember();
+        // 获取群对象
         MiraiGroup group = miraiBotJoinGroupEvent.getGroup();
-        LongID id = member.getId();
-        joinKye.put(id.toString(), id);
+        // 以成员的qq号为key qq为value;
+        joinUserKey.put(member.getId().toLong(), member.getId().toLong());
         member.muteBlocking(30, TimeUnit.DAYS);
+        // 创建@ 并且添加消息链
         At at = new At(member.getId());
-        Messages messages = Messages.toMessages(at, Text.of( "看群置顶自动解除禁言!"));
-        group.sendAsync(messages);
+        Messages messages = Messages.toMessages(at);
+
+        group.sendAsync(messages.plus(Messages.toMessages(Text.of(" 看群置顶公告自动解除禁言!"))));
         /*-------------------------获取公告-----------------------------*/
         MiraiAnnouncements announcements = group.getAnnouncements();
         Announcements originalAnnouncements = announcements.getOriginalAnnouncements();
         List<OnlineAnnouncement> onlineAnnouncements = originalAnnouncements.toList();
-        log.info("公告数量{}",onlineAnnouncements.size());
         OnlineAnnouncement onlineAnnouncement = onlineAnnouncements.get(0);
-        log.info("公告数量",onlineAnnouncement);
+
+
         /*------------------------检查map是否还有人---------------------*/
-        while (joinKye.size()>0) {
+        while (true) {
+            Thread.sleep(10000);
             List<NormalMember> members = onlineAnnouncement.members(true);
-            try {
-                Thread.sleep(5000);
-                for(NormalMember member1:members){
-                    MiraiMember unMember = (MiraiMember) member1;
-                    if(joinKye.get(unMember.getId().toString())==null){
-                        continue;
-                    }
-                    unMember.unmuteBlocking();
-                    joinKye.remove(joinKye.get(unMember.getId().toString()));
-                    At at1 = new At(unMember.getId());
-                    Messages unMessages = Messages.toMessages(at1, Text.of("检测到你已经看置顶公告自动解除禁言!"));
-                    group.sendAsync(unMessages);
+            for (NormalMember user : members) {
+                if (joinUserKey.get(user.getId()) == null) {
+                    continue;
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                user.unmute();
+                joinUserKey.remove(user.getId());
+                At unAt = new At(new LongID(user.getId()));
+                Messages unMessages = Messages.toMessages(unAt, Text.of("检测到你已经阅读置顶公告自动解除禁言!"));
+                group.sendAsync(unMessages);
+                return;
             }
         }
     }
 
     /**
      * 解决成员退群的操作
+     *
      * @param miraiMemberLeaveEvent
      */
     @Override
     public void laveGroup(MiraiMemberLeaveEvent miraiMemberLeaveEvent) {
+        MiraiGroup group = miraiMemberLeaveEvent.getGroup();
         MiraiMember member = miraiMemberLeaveEvent.getMember();
-        LongID id = member.getId();
-        member.sendAsync(id +"已退群!");
+        group.sendAsync(member.getId() + "已退群!");
     }
 
 
-
     /**
-     * hmd的录入功能
-     * @param miraiGroupMessageEvent
-     * @param sessionContext
+     * 处理群消息撤回操作
+     * @param miraiGroupMessageRecallEvent
      */
     @Override
-    @Async()
-    public void persistentSessions(MiraiGroupMessageEvent miraiGroupMessageEvent, ContinuousSessionContext  sessionContext) {
-        miraiGroupMessageEvent.sendAsync("请输入举报人的id\n可随时输入 取消命令 取消录入，");
-        Map<Integer,String> data = new HashMap<>();
-        LongID id = miraiGroupMessageEvent.getAuthor().getId();
-        final int[] a = {4};
-        String[]  messages = new String[]{"请输入视频证据链接，如果没有请输入证据图片！","请输入处理的管理员id","请输入举报人被举报的时间","请输入被举报的服务器：例:S1","请输入举报原因"};
-        final MessageContent message = sessionContext.waitingForNextMessage(miraiGroupMessageEvent.Key, (context, event) -> {
-            int sum = a[0];
-            if(event.getAuthor().getId().equals(id)){
-                // 判断是否是同一个人
-                if(event.getMessageContent().getPlainText().contains("取消")){
-                    miraiGroupMessageEvent.sendAsync("已取消录入..");
-                    return true;
+    public void groupMessageRecallEvent(MiraiGroupMessageRecallEvent miraiGroupMessageRecallEvent) {
+        Messages messages = miraiGroupMessageRecallEvent.getMessages();
+        MiraiGroup group = miraiGroupMessageRecallEvent.getGroup();
+        MiraiMember author = miraiGroupMessageRecallEvent.getAuthor();
+        MiraiBot bot = miraiGroupMessageRecallEvent.getBot();
+        MiraiGroup adminGroup = bot.getGroup(ID.$(600723467));
+        int sum = new Random().nextInt(9) + 1;
+        messages.forEach(data->{
+            if(data instanceof Text){
+                group.sendAsync("群昵称: "+group.getName()+" \n昵称为: "+author.getNickname()+" \nqq号码为: "+author.getId()+"\n撤回了一条消息\n"+((Text) data).getText());
+                try {
+                    Thread.sleep(sum * 1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-                data.put(sum+1,event.getMessageContent().getPlainText());
-                if(sum <= -1){
-                    Hmd hmd = getHmd(data);
-                    try {
-                        int insert = hmdDataMapper.insert(hmd);
-                        if(insert==1){
-                            miraiGroupMessageEvent.sendAsync("已成功录入数据库..");
-                            return true;
-                        }
-                    }catch (Exception exception){
-                        exception.printStackTrace();
-                        miraiGroupMessageEvent.sendAsync("数据库已存在此用户，请删除此用户在重新录入,或重新修改用户信息，或查询此用户的信息!");
-                        return true;
-                    }
+                adminGroup.sendAsync("群昵称: "+group.getName()+" \n昵称为: "+author.getNickname()+" \nqq号码为: "+author.getId()+"\n撤回了一条消息\n"+((Text) data).getText());
+            }else if(data instanceof Image){
+                Image image = (Image) data;
+                Resource resource = image.getResource();
+                ResourceImage of = Image.of(resource);
+                Messages img = Messages.toMessages(of);
+                group.sendAsync(Messages.toMessages(Text.of("群昵称: "+group.getName()+" \n昵称为: "+author.getNickname()+" \nqq号码为: "+author.getId()+"\n撤回了一张图片")).plus(img));
+                try {
+                    Thread.sleep(sum * 1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-
-                miraiGroupMessageEvent.sendAsync(messages[sum]);
-                a[0] = a[0] - 1;
-                if(sum==0){
-                    sum = sum - 1;
-                    String imgUrl = getImgUrl(event, data);
-                    data.put(sum,imgUrl);
-                }
+                adminGroup.sendAsync(Messages.toMessages(Text.of("群昵称: "+group.getName()+" \n昵称为: "+author.getNickname()+" \nqq号码为: "+author.getId()+"\n撤回了一张图片")).plus(img));
             }
-            return false;
         });
-        System.out.println(data);
-    }
-
-
-
-
-    /**
-     * set信息转为对象
-     * @param strings
-     * @return
-     */
-    private Hmd getHmd(Map<Integer,String> strings){
-        Hmd hmd = new Hmd();
-        hmd.setId(strings.get(5));
-        hmd.setYuanYin(strings.get(4));
-        hmd.setServer(strings.get(3));
-        hmd.setData(strings.get(2));
-        hmd.setAdmin(strings.get(-1));
-        hmd.setUrl(strings.get(0));
-        return  hmd;
     }
 
 
     /**
-     * 获取图片 并且保存本地
+     * 处理管理员的命令
+     *
      * @param miraiGroupMessageEvent
-     * @param map
-     * @return
      */
-    @SneakyThrows
-    private String getImgUrl(MiraiGroupMessageEvent miraiGroupMessageEvent,Map<Integer,String> map){
-        for (Message.Element<?> message : miraiGroupMessageEvent.getMessageContent().getMessages()) {
-            if (message instanceof Image) {
-                Image image =(Image) message;
-                InputStream inputStream = image.getResource().openStream();
-                // 先创建用户文件夹
-                File file = new File("C:\\Users\\admin\\Desktop\\img" + map.get(5));
-                file.mkdir();
-                // 在把图片放在文件夹里面
-                writeToLocal(file.getAbsolutePath(),inputStream);
-                return "图片";
-            }else {
-                return miraiGroupMessageEvent.getMessageContent().getPlainText();
+    private void adminMessage(MiraiGroupMessageEvent miraiGroupMessageEvent) {
+        MiraiGroup group = miraiGroupMessageEvent.getGroup();
+        MiraiMember author = miraiGroupMessageEvent.getAuthor();
+        String message = miraiGroupMessageEvent.getMessageContent().getPlainText();
+        if(author.isAdmin() || author.isOwner()){
+            switch (message){
+                case "." ->{
+                    for(Long key:joinUserKey.keySet()){
+                        joinUserKey.remove(key);
+                    }
+                    group.sendAsync("已清除群内所有入群时禁言!");
+                }
+                case ".." ->{
+                    group.muteBlocking();
+                    group.sendAsync("已开启全员禁言!");
+                }
+                case "。。" ->{
+                    group.unmuteAsync();
+                    group.sendAsync("已解除全员禁言!");
+                }
             }
         }
-        return miraiGroupMessageEvent.getMessageContent().getPlainText();
     }
 
-    /**
-     * 文件流读取
-     * @param destination
-     * @param input
-     * @throws IOException
-     */
-    private void writeToLocal(String destination, InputStream input)
-            throws IOException {
-        int index;
-        byte[] bytes = new byte[1024];
-        FileOutputStream downloadFile = new FileOutputStream(destination);
-        while ((index = input.read(bytes)) != -1) {
-            downloadFile.write(bytes, 0, index);
-            downloadFile.flush();
-        }
-        input.close();
-        downloadFile.close();
 
+    /**
+     * 处理群主的命令 设置白名单
+     */
+    private void ownerMessage(MiraiGroupMessageEvent miraiGroupMessageEvent){
+        String message = miraiGroupMessageEvent.getMessageContent().getPlainText();
+        MiraiGroup group = miraiGroupMessageEvent.getGroup();
+        MiraiMember author = miraiGroupMessageEvent.getAuthor();
+        if(author.getId().toString().equals("184595172") || author.getId().toString().equals("2564839024")){
+            if(message.contains("add admin=") || message.contains("remover admin=")){
+                String[] qq = message.split("=");
+                // 判断是否为qq为数字
+                if(!qq[1].matches("\\d+")){
+                    group.sendAsync(qq[1]+" qq为数字!");
+                    return;
+                }
+                MiraiMember member = group.getMember(ID.$(Long.parseLong(qq[1])));
+                try {
+                    if(message.contains("add")){
+                        Bmd bmd = new Bmd();
+                        bmd.setQq(qq[1]);
+                        int insert = bmdMapper.insert(bmd);
+                        if(insert>0){
+                            group.sendAsync("已添加"+qq[1]+"为白名单");
+                            StaticConstants.admin.put(member.getId().toString(),member.getId().toString());
+                            return;
+                        }
+                        group.sendAsync("添加"+qq[1]+"为白名单失败!");
+                        return;
+                    }
+                }catch (Exception e){
+                    group.sendAsync("白名单中已存在此用户!");
+                }
+               try {
+                   if(message.contains("remove")){
+                       int i = bmdMapper.deleteById(qq[1]);
+                       if(i>0){
+                           group.sendAsync("已取消"+qq[1]+"为白名单");
+                           StaticConstants.admin.remove(member.getId().toString());
+                           return;
+                       }
+                       group.sendAsync("取消"+qq[1]+"为白名单失败!");
+                   }
+               }catch (Exception e){
+                   group.sendAsync("白名单中无此用户!");
+               }
+            }
+        }
     }
 
 
