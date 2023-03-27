@@ -101,7 +101,7 @@ public class CreateImgUtil {
     @SneakyThrows
     public InputStream createUserDataImg( User user, String banCheck){
         ImageCombiner imageCombiner = new ImageCombiner(1500,850,new Color(14, 15, 20),OutputFormat.JPG);
-        imageCombiner.addTextElement("个人生涯","宋体",32,50,270).setColor(255,255,255);
+        imageCombiner.addTextElement("个人生涯","宋体",32,50,260).setColor(255,255,255);
         InputStream inputStream = new ClassPathResource("img/bfv.png").getInputStream();
         imageCombiner.addRectangleElement(50,300,580,250).setColor(22, 24, 31).setRoundCorner(20);
         imageCombiner.setQuality(.1f);

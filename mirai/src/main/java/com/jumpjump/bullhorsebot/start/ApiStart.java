@@ -6,7 +6,6 @@ import com.jumpjump.bullhorsebot.client.WebHttpClient;
 import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
 import com.jumpjump.bullhorsebot.constants.StaticConstants;
 import com.jumpjump.bullhorsebot.utils.CheckServer;
-import jakarta.annotation.Resource;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -16,8 +15,12 @@ import java.util.List;
 @Component
 public class ApiStart implements ApplicationRunner {
 
-    @Resource
-   private WebHttpClient webHttpClient;
+    private final WebHttpClient webHttpClient;
+
+    public ApiStart(WebHttpClient webHttpClient) {
+        this.webHttpClient = webHttpClient;
+    }
+
     /**
      * 系统启动时加载8653的服务器
      * @param args

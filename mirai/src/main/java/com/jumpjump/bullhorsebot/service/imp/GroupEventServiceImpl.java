@@ -4,10 +4,11 @@ import com.jumpjump.bullhorsebot.bean.Server;
 import com.jumpjump.bullhorsebot.bean.User;
 import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
 import com.jumpjump.bullhorsebot.constants.StaticConstants;
+import com.jumpjump.bullhorsebot.bean.Bmd;
 import com.jumpjump.bullhorsebot.mapper.BmdMapper;
-import com.jumpjump.bullhorsebot.mode.vo.Bmd;
 import com.jumpjump.bullhorsebot.service.GroupAPIService;
 import com.jumpjump.bullhorsebot.service.GroupEventService;
+import com.jumpjump.bullhorsebot.utils.CheckServer;
 import com.jumpjump.bullhorsebot.utils.CreateImgUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,11 @@ import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent;
 import love.forte.simbot.message.*;
 import love.forte.simbot.resources.Resource;
 import love.forte.simbot.resources.StandardResource;
+import love.forte.simbot.utils.item.Items;
 import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.announcement.Announcements;
 import net.mamoe.mirai.contact.announcement.OnlineAnnouncement;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -49,7 +52,9 @@ public class GroupEventServiceImpl implements GroupEventService {
 
     private final CreateImgUtil createImgUtil;
 
+
     private final BmdMapper bmdMapper;
+
 
     public GroupEventServiceImpl(GroupAPIService groupAPIService, CreateImgUtil createImgUtil, BmdMapper bmdMapper) {
         this.groupAPIService = groupAPIService;
@@ -257,19 +262,29 @@ public class GroupEventServiceImpl implements GroupEventService {
         String message = miraiGroupMessageEvent.getMessageContent().getPlainText();
         if(author.isAdmin() || author.isOwner()){
             switch (message){
-                case "." ->{
+                case "." :{
+                    Items<MiraiMember> members = group.getMembers();
+                    List<MiraiMember> miraiMembers = members.collectToList();
+                    miraiMembers.forEach(miraiMember -> {
+                        if(miraiMember.isMuted()){
+                            miraiMember.unmuteAsync();
+                        }
+                    });
                     for(Long key:joinUserKey.keySet()){
                         joinUserKey.remove(key);
                     }
-                    group.sendAsync("已清除群内所有入群时禁言!");
+                    group.sendAsync("已清除群内所有禁言!");
+                    break;
                 }
-                case ".." ->{
+                 case ".." :{
                     group.muteBlocking();
                     group.sendAsync("已开启全员禁言!");
+                    break;
                 }
-                case "。。" ->{
+                 case "。。" :{
                     group.unmuteAsync();
                     group.sendAsync("已解除全员禁言!");
+                    break;
                 }
             }
         }
@@ -292,6 +307,10 @@ public class GroupEventServiceImpl implements GroupEventService {
                     return;
                 }
                 MiraiMember member = group.getMember(ID.$(Long.parseLong(qq[1])));
+                if(member==null){
+                    group.sendAsync("群内不存在"+qq[1]+"用户");
+                    return;
+                }
                 try {
                     if(message.contains("add")){
                         Bmd bmd = new Bmd();
@@ -308,19 +327,19 @@ public class GroupEventServiceImpl implements GroupEventService {
                 }catch (Exception e){
                     group.sendAsync("白名单中已存在此用户!");
                 }
-               try {
-                   if(message.contains("remove")){
-                       int i = bmdMapper.deleteById(qq[1]);
-                       if(i>0){
-                           group.sendAsync("已取消"+qq[1]+"为白名单");
-                           StaticConstants.admin.remove(member.getId().toString());
-                           return;
-                       }
-                       group.sendAsync("取消"+qq[1]+"为白名单失败!");
-                   }
-               }catch (Exception e){
-                   group.sendAsync("白名单中无此用户!");
-               }
+                try {
+                    if(message.contains("remove")){
+                        int i = bmdMapper.deleteById(qq[1]);
+                        if(i>0){
+                            group.sendAsync("已取消"+qq[1]+"为白名单");
+                            StaticConstants.admin.remove(member.getId().toString());
+                            return;
+                        }
+                        group.sendAsync("取消"+qq[1]+"为白名单失败!");
+                    }
+                }catch (Exception e){
+                    group.sendAsync("白名单中无此用户!");
+                }
             }
         }
     }

@@ -1,12 +1,12 @@
 {
   "component": "simbot.mirai",
-  "code": "2315200674",
+  "code": "1274549479",
   "passwordInfo": {
     "type": "text",
-    "text": "wcylovegem1314"
+    "text": "Jumpjump01181X"
   },
   "config": {
-    "protocol": "ANDROID_PHONE",
+    "protocol": "MACOS",
     "recallMessageCacheStrategyConfig": {
       "type": "memory_lru"
     }

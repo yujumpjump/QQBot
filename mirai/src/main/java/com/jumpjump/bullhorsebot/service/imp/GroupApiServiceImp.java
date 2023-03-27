@@ -10,8 +10,8 @@ import com.jumpjump.bullhorsebot.constants.ApiURLConstant;
 import com.jumpjump.bullhorsebot.constants.StaticConstants;
 import com.jumpjump.bullhorsebot.service.GroupAPIService;
 import com.jumpjump.bullhorsebot.utils.CheckServer;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,8 +22,11 @@ import java.util.List;
 public class GroupApiServiceImp implements GroupAPIService {
 
 
-    @Resource
-    private WebHttpClient httpClient;
+    private final WebHttpClient httpClient;
+
+    public GroupApiServiceImp(WebHttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 
 
     /**

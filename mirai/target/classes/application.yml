@@ -5,9 +5,9 @@ spring:
     username: root
     password: 8520
 mybatis-plus:
-    configuration:
-      map-underscore-to-camel-case: false        #关闭驼峰命名映射
-      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  configuration:
+    map-underscore-to-camel-case: false        #关闭驼峰命名映射
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 
 
